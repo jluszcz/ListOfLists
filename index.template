@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+    <title>Burger List</title>
+    <link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico"/>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    {% for list_item in burger_list %}
+    {% for city, city_list in list_item.items() %}
+    <h1>{{ city }}</h1>
+    <ol>
+    {% for burger in city_list %}
+        <li>{{ burger }}</li>
+    {% endfor %}
+    </ol>
+    {% endfor %}
+    {% endfor %}
+</body>
+</html>
