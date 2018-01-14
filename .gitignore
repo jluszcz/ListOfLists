@@ -1,8 +1,11 @@
+*pyc
+*tfstate*
+.Python
+.terraform/
 bin/
-include/
+burgerlist.vars
 images/
+include/
 index.html
 lib/
-*pyc
-.Python
 pip-selfcheck.json
