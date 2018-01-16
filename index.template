@@ -9,6 +9,7 @@
 </head>
 <body>
     <div class="container">
+        <p/>
         {% for list_item in burger_list %}
         {% for city, city_list in list_item.items() %}
         <div class="alert alert-dark"><h3>{{ city }}</h3></div>
