@@ -9,7 +9,7 @@ import json
 import logging
 import os
 
-def _get_file_name(file_name, bucket=None, local=False):
+def _get_file_for_read(file_name, bucket=None, local=False):
     if local:
         return file_name
 
@@ -18,27 +18,34 @@ def _get_file_name(file_name, bucket=None, local=False):
     bucket.download_fileobj(file_name, f)
     return f.name
 
+def _get_file_for_write(file_name, local=False):
+    if local:
+        return file_name
+
+    return tempfile.NamedTemporaryFile(delete=False).name
+
 def _read_template(template_file):
     return jinja2.Template(template_file.read())
 
 def read_template(bucket=None, local=False):
-    with open(_get_file_name('index.template', bucket, local)) as f:
+    with open(_get_file_for_read('index.template', bucket, local)) as f:
         return _read_template(f)
 
 def _read_burger_list(list_file):
     return json.load(list_file)
 
 def read_burger_list(bucket=None, local=False):
-    with open(_get_file_name('list.json', bucket, local)) as f:
+    with open(_get_file_for_read('list.json', bucket, local)) as f:
         return _read_burger_list(f)
 
 def write_index(template, burger_list, site_bucket=None, local=False):
-    with codecs.open('index.html', 'w', 'utf-8') as f:
+    filename = _get_file_for_write('index.html', local)
+    with codecs.open(filename, 'w', 'utf-8') as f:
         f.write(template.render(burger_list=burger_list))
 
-        if not local:
-            logging.debug('Uploading index.html')
-            site_bucket.put_object(Key='index.html', Body=open('index.html'), ContentType='text/html')
+    if not local:
+        logging.debug('Uploading index.html')
+        site_bucket.put_object(Key='index.html', Body=open(filename), ContentType='text/html')
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Burger List website generator')
@@ -54,7 +61,7 @@ def setup_logging(verbose=False):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO if not verbose else logging.DEBUG)
     for boto_module in ['boto3', 'botocore', 's3transfer']:
-        logging.getLogger(boto_module).setLevel(logging.CRITICAL)
+       logging.getLogger(boto_module).setLevel(logging.CRITICAL)
 
 def get_bucket(bucket_name, local=False):
     if local:

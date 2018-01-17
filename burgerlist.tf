@@ -129,26 +129,60 @@ data "aws_iam_policy_document" "burgerlist_assume_role_policy_document" {
     }
 }
 
-data "aws_iam_policy_document" "burgerlist_role_policy_document" {
+resource "aws_iam_role" "burgerlist_lambda_role" {
+    name = "lambda.burgerlist"
+    assume_role_policy = "${data.aws_iam_policy_document.burgerlist_assume_role_policy_document.json}"
+}
+
+data "aws_iam_policy_document" "burgerlist_cloudwatch_role_policy_document" {
     statement {
         actions = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:Describe*"]
         resources = ["arn:aws:logs:${var.aws_region}:${var.aws_acct_id}:*"]
     }
 }
 
-resource "aws_iam_role" "burgerlist_role" {
-    name = "burgerlist"
-    assume_role_policy = "${data.aws_iam_policy_document.burgerlist_assume_role_policy_document.json}"
+resource "aws_iam_policy" "burgerlist_cloudwatch_role_policy" {
+    name = "cloudwatch.burgerlist"
+    policy = "${data.aws_iam_policy_document.burgerlist_cloudwatch_role_policy_document.json}"
 }
 
-resource "aws_iam_policy" "burgerlist_role_policy" {
-    name = "burgerlist"
-    policy = "${data.aws_iam_policy_document.burgerlist_role_policy_document.json}"
+resource "aws_iam_role_policy_attachment" "burgerlist_cloudwatch_role_attachment" {
+    role = "${aws_iam_role.burgerlist_lambda_role.name}"
+    policy_arn = "${aws_iam_policy.burgerlist_cloudwatch_role_policy.arn}"
 }
 
-resource "aws_iam_role_policy_attachment" "burgerlist_role_attachment" {
-    role = "${aws_iam_role.burgerlist_role.name}"
-    policy_arn = "${aws_iam_policy.burgerlist_role_policy.arn}"
+data "aws_iam_policy_document" "burgerlist_s3_get_role_policy_document" {
+    statement {
+        actions = ["s3:GetObject"]
+        resources = ["${aws_s3_bucket.burgerlist_generator.arn}/*"]
+    }
+}
+
+resource "aws_iam_policy" "burgerlist_s3_get_role_policy" {
+    name = "s3.get.burgerlist"
+    policy = "${data.aws_iam_policy_document.burgerlist_s3_get_role_policy_document.json}"
+}
+
+resource "aws_iam_role_policy_attachment" "burgerlist_s3_get_role_attachment" {
+    role = "${aws_iam_role.burgerlist_lambda_role.name}"
+    policy_arn = "${aws_iam_policy.burgerlist_s3_get_role_policy.arn}"
+}
+
+data "aws_iam_policy_document" "burgerlist_s3_put_role_policy_document" {
+    statement {
+        actions = ["s3:PutObject"]
+        resources = ["${aws_s3_bucket.burgerlist_site.arn}/index.html"]
+    }
+}
+
+resource "aws_iam_policy" "burgerlist_s3_put_role_policy" {
+    name = "s3.put.burgerlist"
+    policy = "${data.aws_iam_policy_document.burgerlist_s3_put_role_policy_document.json}"
+}
+
+resource "aws_iam_role_policy_attachment" "burgerlist_s3_put_role_attachment" {
+    role = "${aws_iam_role.burgerlist_lambda_role.name}"
+    policy_arn = "${aws_iam_policy.burgerlist_s3_put_role_policy.arn}"
 }
 
 resource "aws_s3_bucket_notification" "burgerlist_generator_notification" {
@@ -175,7 +209,7 @@ variable "burgerlist_filename" {
 resource "aws_lambda_function" "burgerlist_lambda" {
     filename = "${var.burgerlist_filename}"
     function_name = "burgerlist"
-    role = "${aws_iam_role.burgerlist_role.arn}"
+    role = "${aws_iam_role.burgerlist_lambda_role.arn}"
     handler = "burgerlist.lambda_handler"
     source_code_hash = "${base64sha256(file("${var.burgerlist_filename}"))}"
     runtime = "python2.7"
