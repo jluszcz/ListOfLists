@@ -64,15 +64,15 @@ def get_bucket(bucket_name, local=False):
     return s3.Bucket(bucket_name)
 
 def write_index_to_bucket(local=False):
-    gen_bucket = get_bucket('jluszcz-burger-list-generator', local)
-    site_bucket = get_bucket('jluszcz-burger-list-site', local)
+    gen_bucket = get_bucket('jluszcz-burgerlist-generator', local)
+    site_bucket = get_bucket('burgerlist.co', local)
 
     template = read_template(gen_bucket, local)
     burger_list = read_burger_list(gen_bucket, local)
 
     write_index(template, burger_list, site_bucket, local)
 
-def alexa_handler(event, context):
+def lambda_handler(event, context):
     """Entry point for Lambda"""
     setup_logging()
     write_index_to_bucket()

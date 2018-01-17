@@ -4,6 +4,7 @@
 .terraform/
 bin/
 burgerlist.vars
+burgerlist.zip
 images/
 include/
 index.html
