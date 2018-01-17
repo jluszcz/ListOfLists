@@ -15,20 +15,20 @@
         <p/>
         <div class="tabs">
             <nav class="tabs-nav">
-                {% for list_item in burger_list %}
-                {% set active = ' class="active"' if loop.first else '' %}
-                {% for city in list_item %}
+                {%- for list_item in burger_list %}
+                {%- set active = ' class="active"' if loop.first else '' %}
+                {%- for city in list_item %}
                 <a href="#{{ city|replace(' ', '_') }}"{{ active }}>{{ city }}</a>
                 {%- endfor %}
                 {%- endfor %}
             </nav>
-            {% for list_item in burger_list %}
-            {% set active = ' active' if loop.first else '' %}
-            {% for city, city_list in list_item.items() %}
+            {%- for list_item in burger_list %}
+            {%- set active = ' active' if loop.first else '' %}
+            {%- for city, city_list in list_item.items() %}
             <div class="tabs-pane{{ active }}" id="{{ city|replace(' ', '_') }}">
                 <div class="alert alert-dark"><h3>{{ city }}</h3></div>
                 <ol>
-                {% for burger in city_list %}
+                {%- for burger in city_list %}
                     <li>{{ burger }}</li>
                 {%- endfor %}
                 </ol>
