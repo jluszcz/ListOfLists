@@ -50,8 +50,8 @@ def write_index(template, burger_list, site_bucket=None, local=False):
 def parse_args():
     parser = argparse.ArgumentParser(description='Burger List website generator')
     parser.add_argument('--verbose', '-v', dest='verbose', action='store_true', help='If provided, log at DEBUG instead of INFO.')
-    parser.add_argument('--local', action='store_true',
-                        help='If provided, use local files rather than S3.')
+    parser.add_argument('--s3', action='store_true',
+                        help='If provided, use S3 rather than local files.')
 
     return parser.parse_args()
 
@@ -88,7 +88,7 @@ def main():
     """Entry point for running as a CLI"""
     args = parse_args()
     setup_logging(args.verbose)
-    write_index_to_bucket(args.local)
+    write_index_to_bucket(local=not args.s3)
 
 if __name__ == '__main__':
     main()
