@@ -8,18 +8,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdn.shoelace.style/1.0.0-beta24/shoelace.js"></script>
+
     <div class="container">
         <p/>
-        {% for list_item in burger_list %}
-        {% for city, city_list in list_item.items() %}
-        <div class="alert alert-dark"><h3>{{ city }}</h3></div>
-        <ol>
-        {% for burger in city_list %}
-            <li>{{ burger }}</li>
-        {% endfor %}
-        </ol>
-        {% endfor %}
-        {% endfor %}
+        <div class="tabs">
+            <nav class="tabs-nav">
+                {% for list_item in burger_list %}
+                {% set active = ' class="active"' if loop.first else '' %}
+                {% for city in list_item %}
+                <a href="#{{ city|replace(' ', '_') }}"{{ active }}>{{ city }}</a>
+                {%- endfor %}
+                {%- endfor %}
+            </nav>
+            {% for list_item in burger_list %}
+            {% set active = ' active' if loop.first else '' %}
+            {% for city, city_list in list_item.items() %}
+            <div class="tabs-pane{{ active }}" id="{{ city|replace(' ', '_') }}">
+                <div class="alert alert-dark"><h3>{{ city }}</h3></div>
+                <ol>
+                {% for burger in city_list %}
+                    <li>{{ burger }}</li>
+                {%- endfor %}
+                </ol>
+            </div>
+            {%- endfor %}
+            {%- endfor %}
+        </div>
     </div>
 </body>
 </html>
