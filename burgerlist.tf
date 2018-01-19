@@ -48,14 +48,6 @@ resource "aws_s3_bucket_policy" "burgerlist_site_policy" {
 POLICY
 }
 
-resource "aws_s3_bucket_object" "burgerlist_css" {
-	bucket = "${aws_s3_bucket.burgerlist_site.id}"
-	key = "shoelace.css"
-	content_type = "text/css"
-	source = "shoelace.css"
-	etag = "${md5(file("shoelace.css"))}"
-}
-
 resource "aws_s3_bucket_object" "burgerlist_favicon" {
 	bucket = "${aws_s3_bucket.burgerlist_site.id}"
 	key = "images/favicon.ico"
