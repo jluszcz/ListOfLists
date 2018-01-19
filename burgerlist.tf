@@ -74,37 +74,33 @@ resource "aws_s3_bucket_object" "burgerlist_list" {
 }
 
 resource "aws_route53_zone" "burgerlist_zone" {
-  name = "burgerlist.co"
-  comment = "burgerlist"
+	name = "burgerlist.co"
+	comment = "burgerlist"
 }
 
-/*
-TODO 2018-01-16 For some reason I'm getting 400s adding these records, though they work in the console
-
 resource "aws_route53_record" "burgerlist_record" {
-  zone_id = "${aws_route53_zone.burgerlist_zone.zone_id}"
-  name = "burgerlist.co"
-  type = "A"
+	zone_id = "${aws_route53_zone.burgerlist_zone.zone_id}"
+	name = "burgerlist.co"
+	type = "A"
 
-  alias {
-	  name = "${aws_s3_bucket.burgerlist_site.website_domain}"
-	  zone_id = "${aws_route53_zone.burgerlist_zone.zone_id}"
-	  evaluate_target_health = true
-  }
+	alias {
+		name = "${aws_s3_bucket.burgerlist_site.website_domain}"
+		zone_id = "${aws_s3_bucket.burgerlist_site.hosted_zone_id}"
+		evaluate_target_health = false
+	}
 }
 
 resource "aws_route53_record" "burgerlist_record_www" {
-  zone_id = "${aws_route53_zone.burgerlist_zone.zone_id}"
-  name = "www.burgerlist.co"
-  type = "A"
+	zone_id = "${aws_route53_zone.burgerlist_zone.zone_id}"
+	name = "www.burgerlist.co"
+	type = "A"
 
-  alias {
-	  name = "${aws_s3_bucket.burgerlist_site.website_domain}"
-	  zone_id = "${aws_route53_zone.burgerlist_zone.zone_id}"
-	  evaluate_target_health = true
+	alias {
+		name = "${aws_s3_bucket.burgerlist_site.website_domain}"
+		zone_id = "${aws_s3_bucket.burgerlist_site.hosted_zone_id}"
+		evaluate_target_health = false
   }
 }
-*/
 
 resource "aws_cloudwatch_log_group" "burgerlist_logs" {
     name = "/aws/lambda/burgerlist"
