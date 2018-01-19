@@ -17,7 +17,6 @@
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav nav mr-auto">
                     {%- for list_item in burger_list %}
@@ -46,5 +45,7 @@
             {%- endfor %}
             {%- endfor %}
         </div> <!-- Tab Content -->
+    </div> <!-- Container -->
+    <script>$('.navbar-nav>li>a').on('click', function(){$('.navbar-collapse').collapse('hide');});</script>
 </body>
 </html>
