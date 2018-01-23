@@ -53,8 +53,8 @@ POLICY
 resource "aws_s3_bucket_object" "favicon" {
 	bucket = "${aws_s3_bucket.site.id}"
 	key = "images/favicon.ico"
-	source = "images/favicon.ico"
-	etag = "${md5(file("images/favicon.ico"))}"
+	source = "images/${var.site_name}.ico"
+	etag = "${md5(file("images/${var.site_name}.ico"))}"
 }
 
 resource "aws_s3_bucket" "generator" {
@@ -104,7 +104,7 @@ resource "aws_route53_record" "record_www" {
 }
 
 resource "aws_cloudwatch_log_group" "logs" {
-    name = "/aws/lambda/${var.site_name}"
+    name = "/aws/lambda/${var.site_name}-generator"
     retention_in_days = "7"
 }
 
@@ -197,7 +197,7 @@ variable "lambda_filename" {
 
 resource "aws_lambda_function" "lambda" {
     filename = "${var.lambda_filename}"
-    function_name = "generator"
+    function_name = "${var.site_name}-generator"
     role = "${aws_iam_role.lambda_role.arn}"
     handler = "generator.lambda_handler"
     source_code_hash = "${base64sha256(file("${var.lambda_filename}"))}"
