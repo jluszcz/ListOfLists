@@ -12,7 +12,10 @@ lib/
 pip-selfcheck.json
 
 burgerlist
+burgerlist.json
+
 movielist
+movielist.json
 
 generator.zip
 
