@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-    <title>The Burger List</title>
+    <title>{{ title }}</title>
     <link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico"/>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <meta charset="utf-8">
@@ -19,11 +19,11 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav nav mr-auto">
-                    {%- for list_item in burger_list %}
+                    {%- for list_item in lists %}
                     {%- set active = ' active' if loop.first else '' %}
-                    {%- for city in list_item %}
+                    {%- for list_title in list_item %}
                     <li class="nav-item">
-                        <a class="nav-link{{ active }}" data-toggle="tab" href="#{{ city|replace(' ', '_') }}">{{ city }}</a>
+                        <a class="nav-link{{ active }}" data-toggle="tab" href="#{{ list_title|replace(' ', '_') }}">{{ list_title }}</a>
                     </li>
                     {%- endfor %}
                     {%- endfor %}
@@ -31,14 +31,14 @@
             </div> <!-- Navbar -->
         </nav>
         <div class="tab-content">
-            {%- for list_item in burger_list %}
+            {%- for list_item in lists %}
             {%- set active = ' show active' if loop.first else '' %}
-            {%- for city, city_list in list_item.items() %}
-            <div class="tab-pane fade{{ active }}" id="{{ city|replace(' ', '_') }}" role="tabpanel">
+            {%- for list_title, list in list_item.items() %}
+            <div class="tab-pane fade{{ active }}" id="{{ list_title|replace(' ', '_') }}" role="tabpanel">
                 <p></p>
                 <ol>
-                    {%- for burger in city_list %}
-                    <li>{{ burger }}</li>
+                    {%- for item in list %}
+                    <li>{{ item }}</li>
                     {%- endfor %}
                 </ol>
             </div>

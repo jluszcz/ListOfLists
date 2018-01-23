@@ -11,7 +11,9 @@ lib/
 
 pip-selfcheck.json
 
-burgerlist.vars
-burgerlist.zip
+burgerlist
+movielist
+
+generator.zip
 
 index.html
