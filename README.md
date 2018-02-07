@@ -8,14 +8,17 @@ ListOfLists can generate a static website, hosted on AWS in an S3 bucket, from a
         "title": "The List",
         "lists": [
             {
-                "Letters": [
+                "title": "Letters",
+                "hidden": true,
+                "list": [
                     "A",
                     "B",
                     "C"
                 ]
             },
             {
-                "Numbers": [
+                "title": "Numbers",
+                "list": [
                     "1",
                     "2",
                     "3"
