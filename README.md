@@ -31,7 +31,7 @@ ListOfLists can generate a static website, hosted on AWS in an S3 bucket, from a
 
 1. Set up this directory with `virtualenv .`
 1. `source bin/activate`
-1. `pip install boto3 jinja2`
+1. `pip install -r requirements.txt`
 
 ## Update Site
 
