@@ -12,6 +12,11 @@ provider "aws" {
   region = "${var.aws_region}"
 }
 
+provider "aws" {
+  alias = "us_east_1"
+  region = "us-east-1"
+}
+
 resource "aws_s3_bucket" "site" {
 	bucket = "${var.site_url}"
 	acl = "public-read"
@@ -57,6 +62,41 @@ resource "aws_s3_bucket_object" "favicon" {
 	etag = "${md5(file("images/${var.site_name}.ico"))}"
 }
 
+resource "aws_acm_certificate" "cert" {
+  provider = "aws.us_east_1"
+  domain_name = "${var.site_url}"
+  subject_alternative_names = ["www.${var.site_url}"]
+  validation_method = "DNS"
+  tags {
+    Name = "${var.site_name} Certificate"
+  }
+}
+
+resource "aws_acm_certificate_validation" "cert" {
+  provider = "aws.us_east_1"
+  certificate_arn = "${aws_acm_certificate.cert.arn}"
+  validation_record_fqdns = [
+    "${aws_route53_record.cert_validation.fqdn}",
+    "${aws_route53_record.cert_validation_www.fqdn}"
+  ]
+}
+
+resource "aws_route53_record" "cert_validation" {
+  name = "${aws_acm_certificate.cert.domain_validation_options.0.resource_record_name}"
+  type = "${aws_acm_certificate.cert.domain_validation_options.0.resource_record_type}"
+  zone_id = "${aws_route53_zone.zone.id}"
+  records = ["${aws_acm_certificate.cert.domain_validation_options.0.resource_record_value}"]
+  ttl = 60
+}
+
+resource "aws_route53_record" "cert_validation_www" {
+  name = "${aws_acm_certificate.cert.domain_validation_options.1.resource_record_name}"
+  type = "${aws_acm_certificate.cert.domain_validation_options.1.resource_record_type}"
+  zone_id = "${aws_route53_zone.zone.id}"
+  records = ["${aws_acm_certificate.cert.domain_validation_options.1.resource_record_value}"]
+  ttl = 60
+}
+
 resource "aws_cloudfront_distribution" "site_distribution" {
   origin {
     domain_name = "${aws_s3_bucket.site.bucket_domain_name}"
@@ -97,7 +137,9 @@ resource "aws_cloudfront_distribution" "site_distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn = "${aws_acm_certificate.cert.arn}"
+    minimum_protocol_version = "TLSv1"
+    ssl_support_method = "sni-only"
   }
 }
 
