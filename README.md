@@ -1,6 +1,6 @@
 #  ListOfLists
 
-ListOfLists can generate a static website, hosted on AWS in an S3 bucket, from a json file.
+ListOfLists can generate a static website, hosted on AWS in an S3 bucket, from a json file stored in Dropbox.
 
 ## Status
 
@@ -8,28 +8,30 @@ ListOfLists can generate a static website, hosted on AWS in an S3 bucket, from a
 
 ## List JSON
 
-    {
-        "title": "The List",
-        "lists": [
-            {
-                "title": "Letters",
-                "hidden": true,
-                "list": [
-                    "A",
-                    "B",
-                    "C"
-                ]
-            },
-            {
-                "title": "Numbers",
-                "list": [
-                    "1",
-                    "2",
-                    "3"
-                ]
-            }
-        ]
-    }
+```
+{
+    "title": "The List",
+    "lists": [
+        {
+            "title": "Letters",
+            "hidden": true,
+            "list": [
+                "A",
+                "B",
+                "C"
+            ]
+        },
+        {
+            "title": "Numbers",
+            "list": [
+                "1",
+                "2",
+                "3"
+            ]
+        }
+    ]
+}
+```
 
 ## Setup
 
@@ -41,16 +43,23 @@ ListOfLists can generate a static website, hosted on AWS in an S3 bucket, from a
 
 ### Helper Script
 
-    #!/usr/bin/env sh
+```
+#!/usr/bin/env sh
 
-    export TF_VAR_aws_acct_id="123412341234"
-    export TF_VAR_site_name="mysite"
-    export TF_VAR_site_url="mysite.com"
+export SITE="mysite"
+export SITE_URL="$SITE.com"
 
-    export SITE=${TF_VAR_site_name}
-    export SITE_URL=${TF_VAR_site_url}
+export DB_ACCESS_KEY="1234ABCD"
+export DB_FILE_PATH="/MyDirectory/$SITE.json"
 
-    source bin/activate
+export TF_VAR_aws_acct_id="123412341234"
+export TF_VAR_site_name="$SITE"
+export TF_VAR_site_url="$SITE_URL"
+export TF_VAR_db_access_key="$DB_ACCESS_KEY"
+export TF_VAR_db_file_path="$DB_FILE_PATH"
+
+source bin/activate
+```
 
 ### Update
 

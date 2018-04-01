@@ -34,12 +34,8 @@ def get_s3_etag(s3, bucket_name, object_name):
     try:
         e_tag = obj.e_tag.strip('"')
     except ClientError as e:
-        if e.response['Error']['Code'] == str(httplib.NOT_FOUND):
-            logging.debug('%s not found', object_name)
-            e_tag = None
-        else:
-            logging.exception('Error querying %s', object_name)
-            raise
+        logging.exception('Error querying for %s/%s', bucket_name, object_name)
+        e_tag = None
 
     logging.debug('S3 List e_tag: %s', e_tag)
 
