@@ -4,7 +4,6 @@ import argparse
 import boto3
 import dropbox
 import hashlib
-import httplib
 import logging
 import os
 import tempfile
@@ -33,7 +32,7 @@ def get_s3_etag(s3, bucket_name, object_name):
     obj = s3.Object(bucket_name, object_name)
     try:
         e_tag = obj.e_tag.strip('"')
-    except ClientError as e:
+    except ClientError:
         logging.exception('Error querying for %s/%s', bucket_name, object_name)
         e_tag = None
 
