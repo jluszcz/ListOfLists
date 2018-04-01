@@ -20,48 +20,44 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "site" {
-	bucket = "${var.site_url}"
-	acl = "public-read"
-	website {
-	    index_document = "index.html"
-	}
+  bucket = "${var.site_url}"
+  acl = "public-read"
+  website {
+    index_document = "index.html"
+  }
 }
 
 resource "aws_s3_bucket" "site_www" {
-	bucket = "www.${var.site_url}"
-	acl = "public-read"
-	website {
-	    redirect_all_requests_to = "${var.site_url}"
-	}
+  bucket = "www.${var.site_url}"
+  acl = "public-read"
+  website {
+    redirect_all_requests_to = "${var.site_url}"
+  }
 }
 
 resource "aws_s3_bucket_policy" "site_policy" {
-	bucket = "${aws_s3_bucket.site.id}"
-	policy = <<POLICY
+  bucket = "${aws_s3_bucket.site.id}"
+  policy = <<POLICY
 {
-	"Version":"2012-10-17",
-	"Statement": [
-		{
-			"Sid":"PublicReadGetObject",
-      	  	"Effect":"Allow",
-  		  	"Principal": "*",
-    		"Action": [
-				"s3:GetObject"
-			],
-    		"Resource": [
-				"arn:aws:s3:::${aws_s3_bucket.site.id}/*"
-			]
-  	  	}
-	]
+  "Version":"2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": [ "s3:GetObject" ],
+      "Resource": [ "arn:aws:s3:::${aws_s3_bucket.site.id}/*" ]
+    }
+  ]
 }
 POLICY
 }
 
 resource "aws_s3_bucket_object" "favicon" {
-	bucket = "${aws_s3_bucket.site.id}"
-	key = "images/favicon.ico"
-	source = "images/${var.site_name}.ico"
-	etag = "${md5(file("images/${var.site_name}.ico"))}"
+  bucket = "${aws_s3_bucket.site.id}"
+  key = "images/favicon.ico"
+  source = "images/${var.site_name}.ico"
+  etag = "${md5(file("images/${var.site_name}.ico"))}"
 }
 
 resource "aws_acm_certificate" "cert" {
@@ -146,41 +142,41 @@ resource "aws_cloudfront_distribution" "site_distribution" {
 }
 
 resource "aws_s3_bucket" "generator" {
-	bucket = "${var.site_url}-generator"
+  bucket = "${var.site_url}-generator"
 }
 
 resource "aws_s3_bucket_object" "index_template" {
-	bucket = "${aws_s3_bucket.generator.id}"
-	key = "index.template"
-	source = "index.template"
-	etag = "${md5(file("index.template"))}"
+  bucket = "${aws_s3_bucket.generator.id}"
+  key = "index.template"
+  source = "index.template"
+  etag = "${md5(file("index.template"))}"
 }
 
 resource "aws_route53_zone" "zone" {
-	name = "${var.site_url}"
+  name = "${var.site_url}"
 }
 
 resource "aws_route53_record" "record" {
-	zone_id = "${aws_route53_zone.zone.zone_id}"
-	name = "${var.site_url}"
-	type = "A"
+  zone_id = "${aws_route53_zone.zone.zone_id}"
+  name = "${var.site_url}"
+  type = "A"
 
-	alias {
-		name = "${aws_cloudfront_distribution.site_distribution.domain_name}"
+  alias {
+    name = "${aws_cloudfront_distribution.site_distribution.domain_name}"
     zone_id = "${aws_cloudfront_distribution.site_distribution.hosted_zone_id}"
-		evaluate_target_health = false
-	}
+    evaluate_target_health = false
+  }
 }
 
 resource "aws_route53_record" "record_www" {
-	zone_id = "${aws_route53_zone.zone.zone_id}"
-	name = "www.${var.site_url}"
-	type = "A"
+  zone_id = "${aws_route53_zone.zone.zone_id}"
+  name = "www.${var.site_url}"
+  type = "A"
 
-	alias {
-		name = "${aws_cloudfront_distribution.site_distribution.domain_name}"
-		zone_id = "${aws_cloudfront_distribution.site_distribution.hosted_zone_id}"
-		evaluate_target_health = false
+  alias {
+    name = "${aws_cloudfront_distribution.site_distribution.domain_name}"
+    zone_id = "${aws_cloudfront_distribution.site_distribution.hosted_zone_id}"
+    evaluate_target_health = false
   }
 }
 
@@ -293,19 +289,19 @@ resource "aws_iam_role_policy_attachment" "s3_updater_put_role_attachment" {
 }
 
 resource "aws_s3_bucket_notification" "generator_notification" {
-	bucket = "${aws_s3_bucket.generator.id}"
+  bucket = "${aws_s3_bucket.generator.id}"
 
-	lambda_function {
-		lambda_function_arn = "${aws_lambda_function.lambda_generator.arn}"
-		events = ["s3:ObjectCreated:Put"]
-	}
+  lambda_function {
+    lambda_function_arn = "${aws_lambda_function.lambda_generator.arn}"
+    events = ["s3:ObjectCreated:Put"]
+  }
 }
 resource "aws_lambda_permission" "generator_allow_bucket" {
-	statement_id = "AllowExecutionFromS3Bucket"
-	action = "lambda:InvokeFunction"
-	function_name = "${aws_lambda_function.lambda_generator.arn}"
-	principal = "s3.amazonaws.com"
-	source_arn = "${aws_s3_bucket.generator.arn}"
+  statement_id = "AllowExecutionFromS3Bucket"
+  action = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.lambda_generator.arn}"
+  principal = "s3.amazonaws.com"
+  source_arn = "${aws_s3_bucket.generator.arn}"
 }
 
 variable "lambda_filename" {
