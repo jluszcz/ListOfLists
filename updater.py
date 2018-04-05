@@ -4,8 +4,10 @@ import argparse
 import boto3
 import dropbox
 import hashlib
+import json
 import logging
 import os
+import pytz
 import tempfile
 
 from botocore.exceptions import ClientError
@@ -16,29 +18,51 @@ def md5_file(file_name):
         return hashlib.md5(f.read()).hexdigest()
 
 
-def get_list_from_dropbox(dropbox_access_key, dropbox_file_path):
-    dbx = dropbox.Dropbox(dropbox_access_key)
+def get_dropbox_metadata(dropbox, dropbox_file_path):
+    """return last modified time"""
+    file_metadata = dropbox.files_get_metadata(dropbox_file_path)
 
-    list_file = tempfile.NamedTemporaryFile(delete=False)
-    dbx.files_download_to_file(list_file.name, dropbox_file_path)
+    last_modified_time = file_metadata.client_modified
+    last_modified_time = last_modified_time.replace(tzinfo=pytz.UTC)
+    logging.debug('%s last modified time: %s', dropbox_file_path, last_modified_time)
 
-    md5 = md5_file(list_file.name)
-    logging.debug('DB List MD5: %s', md5)
-
-    return list_file.name, md5
+    return last_modified_time
 
 
-def get_s3_etag(s3, bucket_name, object_name):
+def get_list_from_dropbox(dropbox, dropbox_file_path, minify=True):
+    with tempfile.NamedTemporaryFile(delete=False) as lf:
+        dropbox.files_download_to_file(lf.name, dropbox_file_path)
+
+    # TODO [jluszcz 2018-04-05] Minification does not belong in this function
+    if minify:
+        with open(lf.name) as f:
+            list_data = json.load(f)
+
+        with tempfile.NamedTemporaryFile(delete=False) as lf_min:
+            json.dump(list_data, lf_min)
+
+        logging.debug('Minified %s to %s', lf.name, lf_min.name)
+        lf = lf_min
+
+    md5 = md5_file(lf.name)
+    logging.debug('%s MD5: %s', dropbox_file_path, md5)
+
+    return lf.name, md5
+
+
+def get_s3_metadata(s3, bucket_name, object_name):
+    """return etag, last modified time"""
     obj = s3.Object(bucket_name, object_name)
     try:
         e_tag = obj.e_tag.strip('"')
+        last_modified_time = obj.last_modified
     except ClientError:
         logging.exception('Error querying for %s/%s', bucket_name, object_name)
         e_tag = None
 
-    logging.debug('S3 List e_tag: %s', e_tag)
+    logging.debug('S3 List e_tag: %s, Last Modified Time: %s', e_tag, last_modified_time)
 
-    return e_tag
+    return e_tag, last_modified_time
 
 
 def upload_to_s3(s3, bucket_name, object_name, file_name):
@@ -50,8 +74,16 @@ def try_update_list_file(site_url, site_name, dropbox_access_key, dropbox_file_p
     s3_bucket_name = '%s-generator' % site_url
     s3_object_name = '%s.json' % site_name
 
-    db_list_file, db_list_file_md5 = get_list_from_dropbox(dropbox_access_key, dropbox_file_path)
-    s3_etag = get_s3_etag(s3, s3_bucket_name, s3_object_name)
+    s3_etag, s3_last_modified_time = get_s3_metadata(s3, s3_bucket_name, s3_object_name)
+
+    dbx = dropbox.Dropbox(dropbox_access_key)
+    db_last_modified_time = get_dropbox_metadata(dbx, dropbox_file_path)
+
+    if db_last_modified_time <= s3_last_modified_time and not force:
+        logging.info('%s has not been modified since the last S3 upload, skipping', s3_object_name)
+        return
+
+    db_list_file, db_list_file_md5 = get_list_from_dropbox(dbx, dropbox_file_path)
 
     if db_list_file_md5 == s3_etag and not force:
         logging.info('%s is already up to date, skipping', s3_object_name)
@@ -63,7 +95,8 @@ def try_update_list_file(site_url, site_name, dropbox_access_key, dropbox_file_p
 def parse_args():
     parser = argparse.ArgumentParser(description='List of lists website generator')
     parser.add_argument('--verbose', '-v', dest='verbose', action='store_true', help='If provided, log at DEBUG instead of INFO.')
-    parser.add_argument('--force', action='store_true', help='Force an update to S3 even if the list is already up to date.')
+    parser.add_argument('--force', '-f', dest='force', action='store_true',
+                        help='Force an update to S3 even if the list is already up to date.')
     parser.add_argument('--site-name', default=os.environ.get('SITE'), help='Site name, i.e. foolist.')
     parser.add_argument('--site-url', default=os.environ.get('SITE_URL'), help='Site URL, i.e. foo.list.')
     parser.add_argument('--dropbox-access-key', default=os.environ.get('DB_ACCESS_KEY'),
@@ -89,8 +122,8 @@ def setup_logging(verbose=False):
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO if not verbose else logging.DEBUG)
-    for module in ['boto3', 'botocore', 'dropbox', 's3transfer']:
-        logging.getLogger(module).setLevel(logging.CRITICAL)
+    for module in ['boto3', 'botocore', 'dropbox', 's3transfer', 'urllib3']:
+        logging.getLogger(module).setLevel(logging.CRITICAL if not verbose else logging.INFO)
 
 
 def lambda_handler(event, context):
