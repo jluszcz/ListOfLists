@@ -39,7 +39,7 @@ def get_list_from_dropbox(dropbox, dropbox_file_path, minify=True):
             list_data = json.load(f)
 
         with tempfile.NamedTemporaryFile(delete=False) as lf_min:
-            json.dump(list_data, lf_min)
+            json.dump(list_data, lf_min, separators=(',', ':'))
 
         logging.debug('Minified %s to %s', lf.name, lf_min.name)
         lf = lf_min
