@@ -1,0 +1,2 @@
+# Ignore terraform files for GitHub's language detection
+*.tf linguist-detectable=false
