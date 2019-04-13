@@ -318,6 +318,7 @@ resource "aws_lambda_function" "lambda_generator" {
     runtime = "python2.7"
     publish = "false"
     description = "Generate ${var.site_url}"
+    timeout = 5
 
     environment {
         variables = {
@@ -342,6 +343,7 @@ resource "aws_lambda_function" "lambda_updater" {
     runtime = "python2.7"
     publish = "false"
     description = "Update ${var.site_url}"
+    timeout = 5
 
     environment {
         variables = {
