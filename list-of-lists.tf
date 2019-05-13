@@ -325,7 +325,7 @@ resource "aws_lambda_function" "lambda_generator" {
     role = "${aws_iam_role.lambda_generator_role.arn}"
     handler = "generator.lambda_handler"
     source_code_hash = "${base64sha256(file("${var.lambda_filename}"))}"
-    runtime = "python2.7"
+    runtime = "python3.7"
     publish = "false"
     description = "Generate ${var.site_url}"
     timeout = 5
@@ -350,7 +350,7 @@ resource "aws_lambda_function" "lambda_updater" {
     role = "${aws_iam_role.lambda_updater_role.arn}"
     handler = "updater.lambda_handler"
     source_code_hash = "${base64sha256(file("${var.lambda_filename}"))}"
-    runtime = "python2.7"
+    runtime = "python3.7"
     publish = "false"
     description = "Update ${var.site_url}"
     timeout = 5

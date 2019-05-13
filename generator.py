@@ -2,7 +2,6 @@
 
 import argparse
 import boto3
-import codecs
 import tempfile
 import jinja2
 import json
@@ -47,12 +46,13 @@ def read_list(bucket=None, local=False):
 
 def write_index(template, list_data, site_bucket=None, local=False):
     filename = _get_file_for_write('index.html', local)
-    with codecs.open(filename, 'w', 'utf-8') as f:
+    with open(filename, 'w') as f:
         f.write(template.render(title=list_data['title'], lists=list_data['lists']))
 
     if not local:
         logging.debug('Uploading index.html')
-        site_bucket.put_object(Key='index.html', Body=open(filename), ContentType='text/html')
+        with open(filename, 'r') as f:
+            site_bucket.put_object(Key='index.html', Body=f.read(), ContentType='text/html')
 
 
 def parse_args():
