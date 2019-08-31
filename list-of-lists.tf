@@ -22,43 +22,52 @@ provider "aws" {
 
 resource "aws_s3_bucket" "site" {
   bucket = "${var.site_url}"
-  acl = "public-read"
   website {
     index_document = "index.html"
   }
 }
 
-resource "aws_s3_bucket" "site_www" {
-  bucket = "www.${var.site_url}"
-  acl = "public-read"
-  website {
-    redirect_all_requests_to = "${var.site_url}"
+resource "aws_s3_bucket_public_access_block" "site_public_block" {
+  bucket = "${aws_s3_bucket.site.id}"
+
+  block_public_acls = true
+  block_public_policy = true
+  ignore_public_acls = true
+  restrict_public_buckets = true
+}
+
+data "aws_iam_policy_document" "site_policy_document" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.site.arn}/*"]
+
+    principals {
+      type = "AWS"
+      identifiers = ["${aws_cloudfront_origin_access_identity.site_distribution_oai.iam_arn}"]
+    }
+  }
+
+  statement {
+    actions   = ["s3:ListBucket"]
+    resources = ["${aws_s3_bucket.site.arn}"]
+
+    principals {
+      type = "AWS"
+      identifiers = ["${aws_cloudfront_origin_access_identity.site_distribution_oai.iam_arn}"]
+    }
   }
 }
 
 resource "aws_s3_bucket_policy" "site_policy" {
   bucket = "${aws_s3_bucket.site.id}"
-  policy = <<POLICY
-{
-  "Version":"2012-10-17",
-  "Statement": [
-    {
-      "Sid": "PublicReadGetObject",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": [ "s3:GetObject" ],
-      "Resource": [ "arn:aws:s3:::${aws_s3_bucket.site.id}/*" ]
-    }
-  ]
-}
-POLICY
+  policy = "${data.aws_iam_policy_document.site_policy_document.json}"
 }
 
 resource "aws_s3_bucket_object" "favicon" {
   bucket = "${aws_s3_bucket.site.id}"
   key = "images/favicon.ico"
   source = "images/${var.site_name}.ico"
-  etag = "${md5(file("images/${var.site_name}.ico"))}"
+  etag = "${filemd5("images/${var.site_name}.ico")}"
 }
 
 resource "aws_acm_certificate" "cert" {
@@ -66,9 +75,6 @@ resource "aws_acm_certificate" "cert" {
   domain_name = "${var.site_url}"
   subject_alternative_names = ["www.${var.site_url}"]
   validation_method = "DNS"
-  tags {
-    Name = "${var.site_name} Certificate"
-  }
 }
 
 resource "aws_acm_certificate_validation" "cert" {
@@ -96,10 +102,17 @@ resource "aws_route53_record" "cert_validation_www" {
   ttl = 60
 }
 
+resource "aws_cloudfront_origin_access_identity" "site_distribution_oai" {
+}
+
 resource "aws_cloudfront_distribution" "site_distribution" {
   origin {
     domain_name = "${aws_s3_bucket.site.bucket_domain_name}"
     origin_id = "site_bucket_origin"
+
+    s3_origin_config {
+      origin_access_identity = "${aws_cloudfront_origin_access_identity.site_distribution_oai.cloudfront_access_identity_path}"
+    }
   }
 
   enabled = true
@@ -324,7 +337,7 @@ resource "aws_lambda_function" "lambda_generator" {
     function_name = "${var.site_name}-generator"
     role = "${aws_iam_role.lambda_generator_role.arn}"
     handler = "generator.lambda_handler"
-    source_code_hash = "${base64sha256(file("${var.lambda_filename}"))}"
+    source_code_hash = "${filebase64sha256("${var.lambda_filename}")}"
     runtime = "python3.7"
     publish = "false"
     description = "Generate ${var.site_url}"
@@ -349,7 +362,7 @@ resource "aws_lambda_function" "lambda_updater" {
     function_name = "${var.site_name}-updater"
     role = "${aws_iam_role.lambda_updater_role.arn}"
     handler = "updater.lambda_handler"
-    source_code_hash = "${base64sha256(file("${var.lambda_filename}"))}"
+    source_code_hash = "${filebase64sha256("${var.lambda_filename}")}"
     runtime = "python3.7"
     publish = "false"
     description = "Update ${var.site_url}"
