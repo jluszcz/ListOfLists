@@ -8,6 +8,9 @@ import json
 import logging
 import os
 
+from botocore.exceptions import ClientError
+
+CARD_IMAGE_LOCATION = 'images/card.png'
 
 def _get_file_for_read(file_name, bucket=None, local=False):
     if local:
@@ -44,10 +47,33 @@ def read_list(bucket=None, local=False):
         return _read_list(f)
 
 
+def _card_image_exists(site_bucket, local):
+    if not site_bucket:
+        return False
+
+    try:
+        site_bucket.Object(CARD_IMAGE_LOCATION).load()
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] != '404':
+            logging.warn('Failed to check existence of %s: %s', CARD_IMAGE_LOCATION, e)
+        return False
+
+
 def write_index(template, list_data, site_bucket=None, local=False):
     filename = _get_file_for_write('index.html', local)
+
+    template_data = {
+        'title': list_data['title'],
+        'lists': list_data['lists'],
+        'card_url':  None,
+    }
+
+    if _card_image_exists(site_bucket, local):
+        template_data['card_url'] = 'https://%s/%s' % (os.environ['SITE_URL'], CARD_IMAGE_LOCATION)
+
     with open(filename, 'w') as f:
-        f.write(template.render(title=list_data['title'], lists=list_data['lists']))
+        f.write(template.render(**template_data))
 
     if not local:
         logging.debug('Uploading index.html')
@@ -58,8 +84,7 @@ def write_index(template, list_data, site_bucket=None, local=False):
 def parse_args():
     parser = argparse.ArgumentParser(description='List of lists website generator')
     parser.add_argument('--verbose', '-v', dest='verbose', action='store_true', help='If provided, log at DEBUG instead of INFO.')
-    parser.add_argument('--s3', action='store_true',
-                        help='If provided, use S3 rather than local files.')
+    parser.add_argument('--s3', action='store_true', help='If provided, use S3 rather than local files.')
 
     return parser.parse_args()
 

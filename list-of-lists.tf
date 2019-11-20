@@ -27,7 +27,7 @@ resource "aws_s3_bucket" "site" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "site_public_block" {
+resource "aws_s3_bucket_public_access_block" "site" {
   bucket = "${aws_s3_bucket.site.id}"
 
   block_public_acls = true
@@ -36,7 +36,7 @@ resource "aws_s3_bucket_public_access_block" "site_public_block" {
   restrict_public_buckets = true
 }
 
-data "aws_iam_policy_document" "site_policy_document" {
+data "aws_iam_policy_document" "site" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.site.arn}/*"]
@@ -58,9 +58,9 @@ data "aws_iam_policy_document" "site_policy_document" {
   }
 }
 
-resource "aws_s3_bucket_policy" "site_policy" {
+resource "aws_s3_bucket_policy" "site" {
   bucket = "${aws_s3_bucket.site.id}"
-  policy = "${data.aws_iam_policy_document.site_policy_document.json}"
+  policy = "${data.aws_iam_policy_document.site.json}"
 }
 
 resource "aws_s3_bucket_object" "favicon" {
@@ -68,6 +68,14 @@ resource "aws_s3_bucket_object" "favicon" {
   key = "images/favicon.ico"
   source = "images/${var.site_name}.ico"
   etag = "${filemd5("images/${var.site_name}.ico")}"
+}
+
+resource "aws_s3_bucket_object" "card_image" {
+  count = fileexists("images/${var.site_name}_card.png") ? 1 : 0
+  bucket = "${aws_s3_bucket.site.id}"
+  key = "images/card.png"
+  source = "images/${var.site_name}_card.png"
+  etag = "${filemd5("images/${var.site_name}_card.png")}"
 }
 
 resource "aws_acm_certificate" "cert" {
@@ -105,7 +113,7 @@ resource "aws_route53_record" "cert_validation_www" {
 resource "aws_cloudfront_origin_access_identity" "site_distribution_oai" {
 }
 
-resource "aws_cloudfront_distribution" "site_distribution" {
+resource "aws_cloudfront_distribution" "site" {
   origin {
     domain_name = "${aws_s3_bucket.site.bucket_domain_name}"
     origin_id = "site_bucket_origin"
@@ -159,7 +167,7 @@ resource "aws_s3_bucket" "generator" {
   bucket = "${var.site_url}-generator"
 }
 
-resource "aws_s3_bucket_public_access_block" "generator_public_block" {
+resource "aws_s3_bucket_public_access_block" "generator" {
   bucket = "${aws_s3_bucket.generator.id}"
 
   block_public_acls = true
@@ -185,8 +193,8 @@ resource "aws_route53_record" "record" {
   type = "A"
 
   alias {
-    name = "${aws_cloudfront_distribution.site_distribution.domain_name}"
-    zone_id = "${aws_cloudfront_distribution.site_distribution.hosted_zone_id}"
+    name = "${aws_cloudfront_distribution.site.domain_name}"
+    zone_id = "${aws_cloudfront_distribution.site.hosted_zone_id}"
     evaluate_target_health = false
   }
 }
@@ -197,23 +205,23 @@ resource "aws_route53_record" "record_www" {
   type = "A"
 
   alias {
-    name = "${aws_cloudfront_distribution.site_distribution.domain_name}"
-    zone_id = "${aws_cloudfront_distribution.site_distribution.hosted_zone_id}"
+    name = "${aws_cloudfront_distribution.site.domain_name}"
+    zone_id = "${aws_cloudfront_distribution.site.hosted_zone_id}"
     evaluate_target_health = false
   }
 }
 
-resource "aws_cloudwatch_log_group" "generator_logs" {
+resource "aws_cloudwatch_log_group" "generator" {
     name = "/aws/lambda/${var.site_name}-generator"
     retention_in_days = "7"
 }
 
-resource "aws_cloudwatch_log_group" "updater_logs" {
+resource "aws_cloudwatch_log_group" "updater" {
     name = "/aws/lambda/${var.site_name}-updater"
     retention_in_days = "7"
 }
 
-data "aws_iam_policy_document" "assume_role_policy_document" {
+data "aws_iam_policy_document" "lambda_assume_role" {
     statement {
         principals {
             type = "Service"
@@ -223,92 +231,82 @@ data "aws_iam_policy_document" "assume_role_policy_document" {
     }
 }
 
-resource "aws_iam_role" "lambda_generator_role" {
-    name = "lambda.${var.site_name}-generator"
-    assume_role_policy = "${data.aws_iam_policy_document.assume_role_policy_document.json}"
+resource "aws_iam_role" "lambda_generator" {
+    name = "lambda.${var.site_name}.generator"
+    assume_role_policy = "${data.aws_iam_policy_document.lambda_assume_role.json}"
 }
 
-resource "aws_iam_role" "lambda_updater_role" {
-    name = "lambda.${var.site_name}-updater"
-    assume_role_policy = "${data.aws_iam_policy_document.assume_role_policy_document.json}"
+resource "aws_iam_role" "lambda_updater" {
+    name = "lambda.${var.site_name}.updater"
+    assume_role_policy = "${data.aws_iam_policy_document.lambda_assume_role.json}"
 }
 
-data "aws_iam_policy_document" "cloudwatch_role_policy_document" {
+data "aws_iam_policy_document" "cw_logs" {
     statement {
         actions = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:Describe*"]
         resources = ["arn:aws:logs:${var.aws_region}:${var.aws_acct_id}:*"]
     }
 }
 
-resource "aws_iam_policy" "cloudwatch_role_policy" {
-    name = "cloudwatch.${var.site_name}"
-    policy = "${data.aws_iam_policy_document.cloudwatch_role_policy_document.json}"
+resource "aws_iam_policy" "cw_logs" {
+    policy = "${data.aws_iam_policy_document.cw_logs.json}"
 }
 
-resource "aws_iam_role_policy_attachment" "cloudwatch_generator_role_attachment" {
-    role = "${aws_iam_role.lambda_generator_role.name}"
-    policy_arn = "${aws_iam_policy.cloudwatch_role_policy.arn}"
+resource "aws_iam_role_policy_attachment" "generator_cw_logs" {
+    role = "${aws_iam_role.lambda_generator.name}"
+    policy_arn = "${aws_iam_policy.cw_logs.arn}"
 }
 
-resource "aws_iam_role_policy_attachment" "cloudwatch_updater_role_attachment" {
-    role = "${aws_iam_role.lambda_updater_role.name}"
-    policy_arn = "${aws_iam_policy.cloudwatch_role_policy.arn}"
+resource "aws_iam_role_policy_attachment" "updater_cw_logs" {
+    role = "${aws_iam_role.lambda_updater.name}"
+    policy_arn = "${aws_iam_policy.cw_logs.arn}"
 }
 
-data "aws_iam_policy_document" "s3_get_role_policy_document" {
+data "aws_iam_policy_document" "generator_s3" {
+    statement {
+        actions = ["s3:PutObject"]
+        resources = ["${aws_s3_bucket.site.arn}/index.html"]
+    }
+
+    statement {
+        actions = ["s3:GetObject"]
+        resources = ["${aws_s3_bucket.site.arn}/images/card.png"]
+    }
+
     statement {
         actions = ["s3:GetObject"]
         resources = ["${aws_s3_bucket.generator.arn}/*"]
     }
 }
 
-resource "aws_iam_policy" "s3_get_role_policy" {
-    name = "s3.get.${var.site_name}"
-    policy = "${data.aws_iam_policy_document.s3_get_role_policy_document.json}"
+resource "aws_iam_policy" "generator_s3" {
+    policy = "${data.aws_iam_policy_document.generator_s3.json}"
 }
 
-resource "aws_iam_role_policy_attachment" "s3_generator_get_role_attachment" {
-    role = "${aws_iam_role.lambda_generator_role.name}"
-    policy_arn = "${aws_iam_policy.s3_get_role_policy.arn}"
+resource "aws_iam_role_policy_attachment" "generator_s3" {
+    role = "${aws_iam_role.lambda_generator.name}"
+    policy_arn = "${aws_iam_policy.generator_s3.arn}"
 }
 
-resource "aws_iam_role_policy_attachment" "s3_updater_get_role_attachment" {
-    role = "${aws_iam_role.lambda_updater_role.name}"
-    policy_arn = "${aws_iam_policy.s3_get_role_policy.arn}"
-}
-
-data "aws_iam_policy_document" "s3_site_put_role_policy_document" {
-    statement {
-        actions = ["s3:PutObject"]
-        resources = ["${aws_s3_bucket.site.arn}/index.html"]
-    }
-}
-
-resource "aws_iam_policy" "s3_site_put_role_policy" {
-    name = "s3.put.${var.site_name}"
-    policy = "${data.aws_iam_policy_document.s3_site_put_role_policy_document.json}"
-}
-
-resource "aws_iam_role_policy_attachment" "s3_site_put_role_attachment" {
-    role = "${aws_iam_role.lambda_generator_role.name}"
-    policy_arn = "${aws_iam_policy.s3_site_put_role_policy.arn}"
-}
-
-data "aws_iam_policy_document" "s3_updater_put_role_policy_document" {
+data "aws_iam_policy_document" "updater_s3" {
     statement {
         actions = ["s3:PutObject"]
         resources = ["${aws_s3_bucket.generator.arn}/${var.site_name}.json"]
     }
+
+    statement {
+        actions = ["s3:GetObject"]
+        resources = ["${aws_s3_bucket.generator.arn}/*"]
+    }
 }
 
-resource "aws_iam_policy" "s3_updater_put_role_policy" {
-    name = "s3.put.${var.site_name}.json"
-    policy = "${data.aws_iam_policy_document.s3_updater_put_role_policy_document.json}"
+resource "aws_iam_policy" "updater_s3" {
+    policy = "${data.aws_iam_policy_document.updater_s3.json}"
 }
 
-resource "aws_iam_role_policy_attachment" "s3_updater_put_role_attachment" {
-    role = "${aws_iam_role.lambda_updater_role.name}"
-    policy_arn = "${aws_iam_policy.s3_updater_put_role_policy.arn}"
+resource "aws_iam_role_policy_attachment" "updater_s3" {
+    role = "${aws_iam_role.lambda_updater.name}"
+    policy_arn = "${aws_iam_policy.updater_s3.arn}"
 }
 
 resource "aws_s3_bucket_notification" "generator_notification" {
@@ -335,7 +333,7 @@ variable "lambda_filename" {
 resource "aws_lambda_function" "lambda_generator" {
     filename = "${var.lambda_filename}"
     function_name = "${var.site_name}-generator"
-    role = "${aws_iam_role.lambda_generator_role.arn}"
+    role = "${aws_iam_role.lambda_generator.arn}"
     handler = "generator.lambda_handler"
     source_code_hash = "${filebase64sha256("${var.lambda_filename}")}"
     runtime = "python3.7"
@@ -360,7 +358,7 @@ resource "aws_cloudwatch_event_rule" "updater_schedule" {
 resource "aws_lambda_function" "lambda_updater" {
     filename = "${var.lambda_filename}"
     function_name = "${var.site_name}-updater"
-    role = "${aws_iam_role.lambda_updater_role.arn}"
+    role = "${aws_iam_role.lambda_updater.arn}"
     handler = "updater.lambda_handler"
     source_code_hash = "${filebase64sha256("${var.lambda_filename}")}"
     runtime = "python3.7"
