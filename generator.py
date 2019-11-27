@@ -12,6 +12,7 @@ from botocore.exceptions import ClientError
 
 CARD_IMAGE_LOCATION = 'images/card.png'
 
+
 def _get_file_for_read(file_name, bucket=None, local=False):
     if local:
         return file_name
