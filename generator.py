@@ -2,11 +2,12 @@
 
 import argparse
 import boto3
-import tempfile
+import htmlmin
 import jinja2
 import json
 import logging
 import os
+import tempfile
 
 from botocore.exceptions import ClientError
 
@@ -61,7 +62,7 @@ def _card_image_exists(site_bucket, local):
         return False
 
 
-def write_index(template, list_data, site_bucket=None, local=False):
+def write_index(template, list_data, site_bucket=None, local=False, minify=True):
     filename = _get_file_for_write('index.html', local)
 
     template_data = {
@@ -73,8 +74,14 @@ def write_index(template, list_data, site_bucket=None, local=False):
     if _card_image_exists(site_bucket, local):
         template_data['card_url'] = 'https://%s/%s' % (os.environ['SITE_URL'], CARD_IMAGE_LOCATION)
 
+    rendered_site = template.render(**template_data)
+
+    if minify:
+        rendered_site = htmlmin.minify(rendered_site, remove_comments=True, remove_empty_space=True)
+        logging.debug('Minified index.html')
+
     with open(filename, 'w') as f:
-        f.write(template.render(**template_data))
+        f.write(rendered_site)
 
     if not local:
         logging.debug('Uploading index.html')

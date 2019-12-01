@@ -33,7 +33,6 @@ def get_list_from_dropbox(dropbox, dropbox_file_path, minify=True):
     with tempfile.NamedTemporaryFile(delete=False) as lf:
         dropbox.files_download_to_file(lf.name, dropbox_file_path)
 
-    # TODO [jluszcz 2018-04-05] Minification does not belong in this function
     if minify:
         with open(lf.name) as f:
             list_data = json.load(f)
