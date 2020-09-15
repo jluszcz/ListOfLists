@@ -4,7 +4,7 @@ ListOfLists can generate a static website, hosted on AWS in an S3 bucket, from a
 
 ## Status
 
-[![Build Status](https://travis-ci.org/jluszcz/ListOfLists.svg?branch=master)](https://travis-ci.org/jluszcz/ListOfLists)
+[![Build Status](https://travis-ci.com/jluszcz/ListOfLists.svg?branch=master)](https://travis-ci.com/jluszcz/ListOfLists)
 
 ## List JSON
 
