@@ -2,7 +2,7 @@
 *tfstate*
 
 .Python
-.terraform/
+.terraform*
 
 bin/
 images/
