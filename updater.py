@@ -70,8 +70,8 @@ def upload_to_s3(s3, bucket_name, object_name, file_name):
 
 def try_update_list_file(site_url, site_name, dropbox_access_key, dropbox_file_path, force=False):
     s3 = boto3.resource('s3')
-    s3_bucket_name = '%s-generator' % site_url
-    s3_object_name = '%s.json' % site_name
+    s3_bucket_name = f'{site_url}-generator'
+    s3_object_name = f'{site_name}.json'
 
     s3_etag, s3_last_modified_time = get_s3_metadata(s3, s3_bucket_name, s3_object_name)
 

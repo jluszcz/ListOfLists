@@ -45,7 +45,7 @@ def _read_list(list_file):
 
 
 def read_list(bucket=None, local=False):
-    with open(_get_file_for_read('%s.json' % os.environ['SITE'], bucket, local)) as f:
+    with open(_get_file_for_read(f"{os.environ['SITE']}.json", bucket, local)) as f:
         return _read_list(f)
 
 
@@ -72,7 +72,7 @@ def write_index(template, list_data, site_bucket=None, local=False, minify=True)
     }
 
     if _card_image_exists(site_bucket, local):
-        template_data['card_url'] = 'https://%s/%s' % (os.environ['SITE_URL'], CARD_IMAGE_LOCATION)
+        template_data['card_url'] = f"https://{os.environ['SITE_URL']}/{CARD_IMAGE_LOCATION}"
 
     rendered_site = template.render(**template_data)
 
@@ -115,7 +115,7 @@ def get_bucket(bucket_name, local=False):
 
 
 def write_index_to_bucket(local=False):
-    gen_bucket = get_bucket('%s-generator' % os.environ['SITE_URL'], local)
+    gen_bucket = get_bucket(f"{os.environ['SITE_URL']}-generator", local)
     site_bucket = get_bucket(os.environ['SITE_URL'], local)
 
     template = read_template(gen_bucket, local)
