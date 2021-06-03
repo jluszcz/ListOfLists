@@ -1,3 +1,7 @@
+terraform {
+  backend "s3" {}
+}
+
 # Sourced from environment variables named TF_VAR_${VAR_NAME}
 variable "aws_acct_id" {
 }
@@ -348,6 +352,7 @@ resource "aws_lambda_function" "lambda_generator" {
   publish          = "false"
   description      = "Generate ${var.site_url}"
   timeout          = 5
+  memory_size      = 256
 
   environment {
     variables = {
@@ -373,6 +378,7 @@ resource "aws_lambda_function" "lambda_updater" {
   publish          = "false"
   description      = "Update ${var.site_url}"
   timeout          = 5
+  memory_size      = 256
 
   environment {
     variables = {
