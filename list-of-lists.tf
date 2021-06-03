@@ -365,7 +365,7 @@ resource "aws_lambda_function" "lambda_generator" {
 resource "aws_cloudwatch_event_rule" "updater_schedule" {
   name                = "${var.site_name}-updater-schedule"
   description         = "Update ${var.site_name} periodically"
-  schedule_expression = "cron(0 2/14 * * ? *)"
+  schedule_expression = "cron(0 5 * * ? *)"
 }
 
 resource "aws_lambda_function" "lambda_updater" {
