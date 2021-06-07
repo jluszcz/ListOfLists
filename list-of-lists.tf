@@ -330,7 +330,7 @@ resource "aws_s3_bucket_notification" "generator_notification" {
 }
 
 resource "aws_lambda_permission" "generator_allow_bucket" {
-  statement_id  = "AllowExecutionFromS3Bucket"
+  statement_id  = "${var.site_name}-AllowExecutionFromS3Bucket"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.lambda_generator.arn
   principal     = "s3.amazonaws.com"
@@ -366,6 +366,20 @@ resource "aws_cloudwatch_event_rule" "updater_schedule" {
   name                = "${var.site_name}-updater-schedule"
   description         = "Update ${var.site_name} periodically"
   schedule_expression = "cron(0 5 * * ? *)"
+}
+
+resource "aws_lambda_permission" "generator_allow_cloudwatch" {
+  statement_id   = "${var.site_name}-AllowExecutionFromCloudWatch"
+  action         = "lambda:InvokeFunction"
+  function_name  = aws_lambda_function.lambda_updater.arn
+  principal      = "events.amazonaws.com"
+  source_arn     = aws_cloudwatch_event_rule.updater_schedule.arn
+}
+
+resource "aws_cloudwatch_event_target" "updater_event_target" {
+  target_id = var.site_name
+  rule      = aws_cloudwatch_event_rule.updater_schedule.name
+  arn       = aws_lambda_function.lambda_updater.arn
 }
 
 resource "aws_lambda_function" "lambda_updater" {
