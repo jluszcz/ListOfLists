@@ -3,14 +3,12 @@
 .Python
 .terraform*
 bin/
-burgerlist
-burgerlist.json
 images/
 include/
 index.html
 lib/
 listoflists.zip
-movielist
-movielist.json
+env-*
+*.json
 pip-selfcheck.json
 pyvenv.cfg
