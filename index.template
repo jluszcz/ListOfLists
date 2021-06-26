@@ -26,31 +26,39 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav nav mr-auto">
-                    {%- for list_item in lists if not list_item['hidden'] %}
-                    {%- set active = ' active' if loop.first else '' %}
+                    {%- if not list_item['hidden'] %}
+                    {%- for list_item in lists %}
+                    {%- if loop.first %}
+                    {%- set active = ' active' %}
+                    {%- else %}
+                    {%- set active = '' %}
+                    {%- endif %}
                     <li class="nav-item">
-                        <a class="nav-link{{ active }}" data-toggle="tab" href="#{{ list_item['title']|replace(' ', '_') }}">{{ list_item['title'] }}</a>
+                        <a class="nav-link{{ active }}" data-toggle="tab" href="#{{ list_item['title']|replace(from=' ', to='_') }}">{{ list_item['title'] }}</a>
                     </li>
                     {%- endfor %}
+                    {%- endif %}
                 </ul> <!-- Navbar Items -->
             </div> <!-- Navbar -->
         </nav>
         <div class="tab-content">
-            {%- for list_item in lists if not list_item['hidden'] %}
-            {%- set active = ' show active' if loop.first else '' %}
-            <div class="tab-pane fade{{ active }}" id="{{ list_item['title']|replace(' ', '_') }}" role="tabpanel">
-                <p>
+            {%- if not list_item['hidden'] %}
+            {%- for list_item in lists %}
+            {%- if loop.first %}
+            {%- set active = ' show active' %}
+            {%- else %}
+            {%- set active = '' %}
+            {%- endif %}
+            <div class="tab-pane fade{{ active }}" id="{{ list_item['title']|replace(from=' ', to='_') }}" role="tabpanel">
                     <h3>{{ list_item['title'] }}</h3>
-                </p>
-                <p>
                     <ol>
                         {%- for item in list_item['list'] %}
                         <li>{{ item }}</li>
                         {%- endfor %}
                     </ol>
-                </p>
             </div>
             {%- endfor %}
+            {%- endif %}
         </div> <!-- Tab Content -->
     </div> <!-- Container -->
     <script>$('.navbar-nav>li>a').on('click', function(){$('.navbar-collapse').collapse('hide');});</script>
